@@ -1,18 +1,20 @@
-﻿namespace CavRn.Stargate
+﻿using Eco.Shared.Localization;
+
+namespace CavRn.Stargate
 {
     using Eco.Core.Controller;
-    using Eco.Gameplay.Interactions.Interactors;
+    using Eco.Core.Utils;
+    using Eco.Gameplay.Items;
     using Eco.Gameplay.Objects;
     using Eco.Gameplay.Players;
+    using Eco.Mods.TechTree;
     using Eco.Shared.IoC;
-    using Eco.Shared.Items;
     using Eco.Shared.Math;
     using Eco.Shared.Serialization;
-    using Eco.Shared.SharedTypes;
-    using Eco.Shared.Utils;
     using Eco.Shared.Voxel;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Numerics;
     using System.Threading.Tasks;
     using System;
 
@@ -21,15 +23,71 @@
     {
         public override WorldObjectComponentClientAvailability Availability => WorldObjectComponentClientAvailability.Always;
 
+        private static readonly Dictionary<int, string> NumberGlyphAssoc = new()
+        {
+            { 1, "GizehGlyphItem" },
+            { 2, "CraterGlyphItem" },
+            { 3, "VirgoGlyphItem" },
+            { 4, "BootesGlyphItem" },
+            { 5, "CentaurusGlyphItem" },
+            { 6, "LibraGlyphItem" },
+            { 7, "SerpensCaputGlyphItem" },
+            { 8, "NormaGlyphItem" },
+            { 9, "ScorpiusGlyphItem" },
+            { 10, "CoronaAustralisGlyphItem" },
+            { 11, "ScutumGlyphItem" },
+            { 12, "SagittariusGlyphItem" },
+            { 13, "AquilaGlyphItem" },
+            { 14, "MicroscopiumGlyphItem" },
+            { 15, "CapricornusGlyphItem" },
+            { 16, "PiscisAustrinusGlyphItem" },
+            { 17, "EquuleusGlyphItem" },
+            { 18, "AquariusGlyphItem" },
+            { 19, "PegasusGlyphItem" },
+            { 20, "SculptorGlyphItem" },
+            { 21, "PiscesGlyphItem" },
+            { 22, "AndromedaGlyphItem" },
+            { 23, "TriangulumGlyphItem" },
+            { 24, "AriesGlyphItem" },
+            { 25, "PerseusGlyphItem" },
+            { 26, "CetusGlyphItem" },
+            { 27, "TaurusGlyphItem" },
+            { 28, "AurigaGlyphItem" },
+            { 29, "EridanusGlyphItem" },
+            { 30, "OrionGlyphItem" },
+            { 31, "CanisMinorGlyphItem" },
+            { 32, "MonocerosGlyphItem" },
+            { 33, "GeminiGlyphItem" },
+            { 34, "HydraGlyphItem" },
+            { 35, "LynxGlyphItem" },
+            { 36, "CancerGlyphItem" },
+            { 37, "SextansGlyphItem" },
+            { 38, "LeoMinorGlyphItem" },
+            { 39, "LeoGlyphItem" },
+        };
+
+        public override InventoryMoveResult TryPickup(Player player, InventoryChangeSet playerInvChanges, Inventory targetInventory, bool force)
+        {
+            if (this.IsOpened)
+            {
+                Result.Fail(new LocString("You need to close the stargate before picking it!"));
+            }
+
+            return player.User.ToolbarSelected.Item is SteelHammerItem or ModernHammerItem
+                ? Result.Succeeded
+                : Result.Fail(new LocString("You need a Steel Hammer or a Modern Hammer to pickup this Stargate!"));
+        }
+
         private DhdComponent? DhdComponent
         {
             get
             {
-                var dhd = ServiceHolder<IWorldObjectManager>.Obj.GetObjectsWithin(this.Parent.WorldPosXZ(), 15).FirstOrDefault(worldObject => worldObject.GetType() == typeof(DhdObject));
+                var dhd = ServiceHolder<IWorldObjectManager>.Obj.All.OfType<DhdObject>()
+                    .Where(s => WorldPosition3i.Distance((WorldPosition3i)this.Parent.Position3i, (WorldPosition3i)s.Position3i) < 8)
+                    .OrderBy(s => WorldPosition3i.Distance((WorldPosition3i)this.Parent.Position3i, (WorldPosition3i)s.Position3i))
+                    .FirstOrDefault();
 
-                if (dhd != null) return dhd.GetComponent<DhdComponent>();
-
-                return null;
+                return dhd?.GetComponent<DhdComponent>();
             }
         }
 
@@ -37,6 +95,8 @@
         {
             End,
             NoAction,
+            NotPossible,
+            AlreadyDone,
             Success,
         }
 
@@ -46,9 +106,9 @@
 
             if (this.OwnAddress.Count == 6 || this.OwnOrigin > 0) return;
 
-            var xGlyphes = BuildAllOrderedPairs([ 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,14,15,16,17,18,19]);
-            var yGlyphes = BuildAllOrderedPairs([20,21,22]);
-            var zGlyphes = BuildAllOrderedPairs([23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39]);
+            var xGlyphes = BuildAllOrderedPairs(new List<int>() { 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,14,15,16,17,18 });
+            var yGlyphes = BuildAllOrderedPairs(new List<int>() { 19,20,21,22,23 });
+            var zGlyphes = BuildAllOrderedPairs(new List<int>() { 24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39 });
 
             var xg = GetCouple(xGlyphes, this.Parent.Position3i.X, World.WrappedVoxelSize.X);
             var yg = GetCouple(yGlyphes, this.Parent.Position3i.Y, World.WrappedVoxelSize.Y);
@@ -64,13 +124,42 @@
 
             this.OwnOrigin = 1;
 
-            this.OwnAddressIcons = "Address: <size=500%>" + string.Join("", this.OwnAddress.Select(s => $"<link=\"Item:Glyph{s}Item\"><icon name=\"Glyph{s}Item\"></icon></link>")) + "</size>";
-            this.OriginPointIcon = $"Origin: <size=500%><link=\"Item:Glyph{this.OwnOrigin}Item\"><icon name=\"Glyph{this.OwnOrigin}Item\"></icon></link></size>";
+            this.OwnAddressIcons = "Address: <size=400%>" + string.Join("", this.OwnAddress.Select(s => $"<link=\"Item:{NumberGlyphAssoc[s]}\"><icon name=\"{NumberGlyphAssoc[s]}\"></icon></link>")) + "</size>";
+            this.OriginPointIcon = $"Origin: <size=400%><link=\"Item:{NumberGlyphAssoc[this.OwnOrigin]}\"><icon name=\"{NumberGlyphAssoc[this.OwnOrigin]}\"></icon></link></size>";
         }
 
         public override void Tick()
         {
             base.Tick();
+
+            if (this.IsOpened && !this.IsCalledFromOutside && this.dialedStargate is not null)
+            {
+                var usersInPosition = UserManager.Users
+                    .Where(user => user.IsOnline
+                                   && Vector3.Distance(user.Position, this.Parent.Position + Vector3i.Up) < 1.25f)
+                    .ToList();
+
+                var usersToTeleport = usersInPosition.Where(user => !user.Player.MountManager.IsMounted);
+                var targetPos = new Vector3(this.dialedStargate.Parent.Position.X, this.dialedStargate.Parent.Position.Y + 0.25f, this.dialedStargate.Parent.Position.Z) + this.dialedStargate.Parent.Rotation.Back;
+                var targetRot = Eco.Shared.Math.Quaternion.LookRotation(-this.dialedStargate.Parent.Rotation.Forward, this.dialedStargate.Parent.Rotation.Up);
+
+                foreach (var user in usersToTeleport)
+                {
+                    user.Player.SetPositionAndRotation(targetPos, targetRot);
+                    user.Player.Msg(new LocString("You travelled through the Stargate!"));
+                }
+
+                var vehiclesToTeleports = usersInPosition
+                    .Where(user => user.Player.MountManager.IsMounted && user.Player.MountManager.Mount.Driver == user.Player)
+                    .Select(user => user.Player.MountManager.Mount.Parent);
+
+                foreach (var vehiclesToTeleport in vehiclesToTeleports)
+                {
+                    vehiclesToTeleport.Position = targetPos;
+                    vehiclesToTeleport.Rotation = targetRot;
+                    vehiclesToTeleport.SyncPositionAndRotation();
+                }
+            }
 
             if (!this.IsOpened && this.lastAction is not null && DateTime.Now.Subtract((DateTime)this.lastAction).TotalSeconds > 90)
             {
@@ -108,26 +197,30 @@
         }
 
         private List<int> OwnAddress { get; set; } = new List<int>();
-        public int OwnOrigin { get; private set; } = 0;
+        private int OwnOrigin { get; set; } = 0;
         [SyncToView, Autogen, Serialized, PropReadOnly, UITypeName("StringDisplay")] public string OwnAddressIcons { get; set; } = "";
         [SyncToView, Autogen, Serialized, PropReadOnly, UITypeName("StringDisplay")] public string OriginPointIcon { get; set; } = "";
 
-        private readonly List<string> dialAddress = [];
+        private readonly List<string> dialAddress = new List<string>();
 
         private bool isRotating = false;
-        public bool IsOpened { get; private set; }
-        public bool IsCalledFromOutside { get; set; } = false;
+        private bool IsOpened { get; set; }
+        private bool IsCalledFromOutside { get; set; } = false;
         private DateTime? lastAction = null;
         private StargateComponent? dialedStargate;
 
         private void Deactivate(bool notifyDhd = false, bool notifyDialStargate = true)
         {
+            if (!this.IsOpened && this.dialAddress.Count > 0)
+            {
+                this.Parent.TriggerAnimatedEvent("Fail");
+            }
+
             this.lastAction = null;
             this.isRotating = false;
             this.IsOpened = false;
             this.IsCalledFromOutside = false;
 
-            this.Parent.SetAnimatedState("Rotate", this.isRotating);
             this.Parent.SetAnimatedState("Vortex", this.IsOpened);
 
             this.Parent.SetAnimatedState("Chevron1", false);
@@ -164,22 +257,24 @@
 
             if (this.dialAddress.Count >= 7)
             {
-                this.Deactivate();
+                return Response.NotPossible;
+            }
 
-                return Response.End;
+            if (this.dialAddress.Contains(glyph))
+            {
+                return Response.AlreadyDone;
             }
 
             this.dialAddress.Add(glyph);
 
             this.isRotating = true;
-            this.Parent.SetAnimatedState("Rotate", this.isRotating);
+            this.Parent.TriggerAnimatedEvent(this.dialAddress.Count == 7 ? "Rotate7" : "Rotate");
 
             _ = Task.Run(async () =>
             {
                 await Task.Delay(8300);
 
                 this.isRotating = false;
-                this.Parent.SetAnimatedState("Rotate", this.isRotating);
                 this.Parent.SetAnimatedState($"Chevron{this.dialAddress.Count}", true);
             });
 
@@ -198,8 +293,15 @@
             this.IsCalledFromOutside = true;
             this.IsOpened = true;
             this.isRotating = false;
-            this.Parent.SetAnimatedState("Rotate" , this.isRotating);
-            this.Parent.SetAnimatedState("Vortex" , this.IsOpened);
+            this.Parent.SetAnimatedState("Rotate", this.isRotating);
+            this.Parent.TriggerAnimatedEvent("OpenVortex");
+
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(500);
+
+                this.Parent.SetAnimatedState("Vortex" , this.IsOpened);
+            });
 
             this.Parent.SetAnimatedState("Chevron1", true);
             this.Parent.SetAnimatedState("Chevron2", true);
@@ -223,18 +325,27 @@
                 return Response.NoAction;
             }
 
+            if (this.dialAddress.Count == 0)
+            {
+                this.Deactivate();
+                return Response.End;
+            }
+
             if (this.dialAddress.Count != 7 || this.IsOpened || this.OwnOrigin != int.Parse(this.dialAddress[6]))
             {
                 this.Deactivate();
 
-                if (this.IsOpened) player.MsgLocStr("La porte des étoiles de destination est déjà ouverte.");
+                if (this.IsOpened) player.Msg(new LocString("The destination Stargate is already opened!"));
 
                 return Response.End;
             }
 
-            var foundStargate = ServiceHolder<IWorldObjectManager>.Obj.All
-                .Where(worldObject => worldObject.GetType() == typeof(StargateObject) && worldObject != this.Parent)
-                .Select(o => o.GetComponent<StargateComponent>())
+            var foundStargate = ServiceHolder<IWorldObjectManager>.Obj.All.OfType<StargateObject>()
+                .Where(worldObject => worldObject != this.Parent)
+                .Select(o =>
+                {
+                    return o.GetComponent<StargateComponent>();
+                })
                 .FirstOrDefault(o => string.Join(",", o.OwnAddress) == string.Join(",", this.dialAddress.Slice(0, 6)));
 
             if (foundStargate is null)
@@ -249,13 +360,20 @@
             if (dialResponse == Response.End)
             {
                 this.Deactivate();
-
                 return Response.End;
             }
 
             this.dialedStargate = foundStargate;
             this.IsOpened = true;
-            this.Parent.SetAnimatedState("Vortex" , this.IsOpened);
+            this.Parent.TriggerAnimatedEvent("OpenVortex");
+
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(500);
+
+                this.Parent.SetAnimatedState("Vortex" , this.IsOpened);
+            });
+
 
             _ = Task.Run(async () =>
             {
@@ -267,23 +385,23 @@
             return Response.Success;
         }
 
-        [Interaction(InteractionTrigger.InteractKey, "EnterVortex", authRequired: AccessType.None, requiredEnvVars: new[] { "EnterVortex" })]
+        /*[Interaction(InteractionTrigger.InteractKey, "EnterVortex", authRequired: AccessType.None, requiredEnvVars: new[] { "EnterVortex" })]
         public async Task EnterVortex(Player player, InteractionTriggerInfo trigger, InteractionTarget target)
         {
             if (this.dialedStargate is null || !this.IsOpened) return;
 
             if (this.IsCalledFromOutside)
             {
-                player.MsgLocStr("Le vortex n'est pas ouvert dans ce sens !");
+                player.MsgLocStr("Vortex is not opened in this way!");
                 return;
             }
 
-            if (await player.ConfirmBoxLoc($"Souhaitez-vous voyager à travers la porte ?"))
+            if (await player.ConfirmBoxLoc($"Do you want to travel through the stargate?"))
             {
                 var pos = new Vector3i(this.dialedStargate.Parent.Position3i.X, this.dialedStargate.Parent.Position3i.Y, this.dialedStargate.Parent.Position3i.Z) + (2 * this.dialedStargate.Parent.Rotation.Back);
                 player.SetPosition(pos);
-                player.MsgLocStr("Vous avez voyagé à travers la Porte des Etoiles !");
+                player.MsgLocStr("You travelled through the Stargate!");
             }
-        }
+        }*/
     }
 }

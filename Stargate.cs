@@ -1,10 +1,13 @@
-﻿namespace CavRn.Stargate
+﻿using Eco.Gameplay.Components.Auth;
+
+namespace CavRn.Stargate
 {
 	using Eco.Gameplay.Components;
 	using Eco.Mods.TechTree;
 	using System.Collections.Generic;
     using Eco.Core.Controller;
     using Eco.Core.Items;
+    using Eco.Core.Utils;
     using Eco.Gameplay.Items.Recipes;
     using Eco.Gameplay.Items;
     using Eco.Gameplay.Objects;
@@ -19,7 +22,11 @@
 
     [Serialized]
 	[RequireComponent(typeof(StargateComponent))]
-    public class StargateObject : WorldObject, IRepresentsItem
+    [RequireComponent(typeof(OccupancyRequirementComponent))]
+    [RequireComponent(typeof(PropertyAuthComponent))]
+    [Tag("Usable")]
+    [Ecopedia("Stargate", "Stargate", subPageName: "Stargate")]
+    public class StargateObject : WorldObject, IRepresentsItem, IPickupConfirmationComponent
     {
         public override LocString DisplayName { get { return Localizer.DoStr("Stargate"); } }
         public override LocString DisplayDescription
@@ -29,17 +36,12 @@
         public override TableTextureMode TableTexture => TableTextureMode.Stone;
         public virtual Type RepresentedItemType { get { return typeof(StargateItem); } }
 
+        LocString GetComponentPickupConfirmation() => new LocString("Are you sure you want to pickup this stargate? Its coordinates will change if you change its location.");
+        public Result CanPickup()                  => Result.Succeeded;
+
 		static StargateObject()
 		{
 			WorldObject.AddOccupancy<StargateObject>(new List<BlockOccupancy>(){
-				new BlockOccupancy(new Vector3i(-3, 0, 0)),
-				new BlockOccupancy(new Vector3i(-2, 0, 0)),
-				new BlockOccupancy(new Vector3i(-1, 0, 0)),
-				new BlockOccupancy(new Vector3i( 0, 0, 0)),
-				new BlockOccupancy(new Vector3i( 1, 0, 0)),
-				new BlockOccupancy(new Vector3i( 2, 0, 0)),
-				new BlockOccupancy(new Vector3i( 3, 0, 0)),
-
 				new BlockOccupancy(new Vector3i(-3, 1, 0)),
 				new BlockOccupancy(new Vector3i(-2, 1, 0)),
 				new BlockOccupancy(new Vector3i(-1, 1, 0)),
@@ -93,14 +95,14 @@
 
     [Serialized]
     [LocDisplayName("Stargate")]
-    [Category("Hidden"), Tag("NotInBrowser"), NoIcon]
-    [Weight(35000)]
+    [Weight(25000)]
     public class StargateItem : WorldObjectItem<StargateObject>
     {
         public override bool ShowLocationsInWorld => false;
+        protected override OccupancyContext GetOccupancyContext => new SideAttachedContext( 0  | DirectionAxisFlags.Down , WorldObject.GetOccupancyInfo(this.WorldObjectType));
     }
 
-    [RequiresSkill(typeof(SelfImprovementSkill), 6)]
+    [RequiresSkill(typeof(BlacksmithSkill), 6)]
     public class StargateRecipe : RecipeFamily
     {
         public StargateRecipe()
@@ -111,31 +113,21 @@
                 Localizer.DoStr("Stargate"),
                 new List<IngredientElement>
                 {
-                    new IngredientElement(typeof(RebarItem), 1500, true),
-                    new IngredientElement(typeof(HeatSinkItem), 200, true),
-                    new IngredientElement(typeof(WhetstoneItem), 3000, true),
-                    new IngredientElement(typeof(IronWheelItem), 200, true),
-                    new IngredientElement(typeof(LightBulbItem), 100, true),
-                    new IngredientElement(typeof(PlasticItem), 500, true),
-                    new IngredientElement(typeof(ElevatorCallPostItem), 100, true),
-                    new IngredientElement(typeof(CeramicMoldItem), 800, true),
-                    new IngredientElement(typeof(SteelSawBladeItem), 200, true),
-                    new IngredientElement(typeof(MetalRudderItem), 200, true),
-                    new IngredientElement(typeof(LubricantItem), 1000, true),
-                    new IngredientElement(typeof(PrintingSuppliesItem), 300, true),
+                    new IngredientElement(typeof(RebarItem), 1000),
+                    new IngredientElement(typeof(HeatSinkItem), 100),
+                    new IngredientElement(typeof(LubricantItem), 100),
                     new IngredientElement(typeof(ChevronItem), 9, true),
-                    new IngredientElement("Glyph", 39, true),
                 },
                 new List<CraftingElement>
                 {
                     new CraftingElement<StargateItem>()
                 });
             this.Recipes = new List<Recipe> { recipe };
-            this.ExperienceOnCraft = 500;
-            this.LaborInCalories = CreateLaborInCaloriesValue(5_000_000);
-            this.CraftMinutes = CreateCraftTimeValue(120);
+            this.ExperienceOnCraft = 50;
+            this.LaborInCalories = CreateLaborInCaloriesValue(1_000_000);
+            this.CraftMinutes = CreateCraftTimeValue(2880);
             this.Initialize(Localizer.DoStr("Stargate"), typeof(StargateRecipe));
-            CraftingComponent.AddRecipe(typeof(SarcophagusObject), this);
+            CraftingComponent.AddRecipe(typeof(BlacksmithTableObject), this);
         }
     }
 }

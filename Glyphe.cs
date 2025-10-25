@@ -1,7 +1,5 @@
 ﻿namespace CavRn.Stargate
 {
-    using System.ComponentModel;
-    using Eco.Core.Items;
     using Eco.Gameplay.Items;
     using Eco.Shared.Localization;
     using Eco.Shared.Serialization;
@@ -9,351 +7,312 @@
     [Serialized]
     [LocDisplayName("Gizeh")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Gizeh.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph1Item: Item
+    [LocDescription("GizehGlyph")]
+    public class GizehGlyphItem: Item
     {
     }
 
     [Serialized]
-    [LocDisplayName("Coupe")]
+    [LocDisplayName("Crater")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Coupe.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph2Item: Item
+    [LocDescription("CraterGlyph")]
+    public class CraterGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Virgo")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Virgo.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph3Item: Item
+    [LocDescription("VirgoGlyph")]
+    public class VirgoGlyphItem: Item
     {
     }
 
     [Serialized]
-    [LocDisplayName("Boötes")]
+    [LocDisplayName("Bootes")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Boötes.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph4Item: Item
+    [LocDescription("BootesGlyph")]
+    public class BootesGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Centaurus")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Centaurus.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph5Item: Item
+    [LocDescription("CentaurusGlyph")]
+    public class CentaurusGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Libra")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Libra.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph6Item: Item
+    [LocDescription("LibraGlyph")]
+    public class LibraGlyphItem: Item
     {
     }
 
     [Serialized]
-    [LocDisplayName("Serpens Caput")]
+    [LocDisplayName("SerpensCaput")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Serpens Caput.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph7Item: Item
+    [LocDescription("SerpensCaputGlyph")]
+    public class SerpensCaputGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Norma")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Norma.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph8Item: Item
+    [LocDescription("NormaGlyph")]
+    public class NormaGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Scorpius")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Scorpius.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph9Item: Item
+    [LocDescription("ScorpiusGlyph")]
+    public class ScorpiusGlyphItem: Item
     {
     }
 
     [Serialized]
-    [LocDisplayName("Corona Australis")]
+    [LocDisplayName("CoronaAustralis")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Corona Australis.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph10Item: Item
+    [LocDescription("CoronaAustralisGlyph")]
+    public class CoronaAustralisGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Scutum")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Scutum.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph11Item: Item
+    [LocDescription("ScutumGlyph")]
+    public class ScutumGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Sagittarius")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Sagittarius.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph12Item: Item
+    [LocDescription("SagittariusGlyph")]
+    public class SagittariusGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Aquila")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Aquila.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph13Item: Item
+    [LocDescription("AquilaGlyph")]
+    public class AquilaGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Microscopium")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Microscopium.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph14Item: Item
+    [LocDescription("MicroscopiumGlyph")]
+    public class MicroscopiumGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Capricornus")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Capricornus.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph15Item: Item
+    [LocDescription("CapricornusGlyph")]
+    public class CapricornusGlyphItem: Item
     {
     }
 
     [Serialized]
-    [LocDisplayName("Piscis Austrinus")]
+    [LocDisplayName("PiscisAustrinus")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Piscis Austrinus.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph16Item: Item
+    [LocDescription("PiscisAustrinusGlyph")]
+    public class PiscisAustrinusGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Equuleus")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Equuleus.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph17Item: Item
+    [LocDescription("EquuleusGlyph")]
+    public class EquuleusGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Aquarius")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Aquarius.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph18Item: Item
+    [LocDescription("AquariusGlyph")]
+    public class AquariusGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Pegasus")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Pegasus.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph19Item: Item
+    [LocDescription("PegasusGlyph")]
+    public class PegasusGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Sculptor")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Sculptor.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph20Item: Item
+    [LocDescription("SculptorGlyph")]
+    public class SculptorGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Pisces")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Pisces.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph21Item: Item
+    [LocDescription("PiscesGlyph")]
+    public class PiscesGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Andromeda")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Andromeda.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph22Item: Item
+    [LocDescription("AndromedaGlyph")]
+    public class AndromedaGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Triangulum")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Triangulum.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph23Item: Item
+    [LocDescription("TriangulumGlyph")]
+    public class TriangulumGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Aries")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Aries.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph24Item: Item
+    [LocDescription("AriesGlyph")]
+    public class AriesGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Perseus")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Perseus.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph25Item: Item
+    [LocDescription("PerseusGlyph")]
+    public class PerseusGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Cetus")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Cetus.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph26Item: Item
+    [LocDescription("CetusGlyph")]
+    public class CetusGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Taurus")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Taurus.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph27Item: Item
+    [LocDescription("TaurusGlyph")]
+    public class TaurusGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Auriga")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Auriga.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph28Item: Item
+    [LocDescription("AurigaGlyph")]
+    public class AurigaGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Eridanus")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Eridanus.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph29Item: Item
+    [LocDescription("EridanusGlyph")]
+    public class EridanusGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Orion")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Orion.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph30Item: Item
+    [LocDescription("OrionGlyph")]
+    public class OrionGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Canis Minor")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Canis Minor.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph31Item: Item
+    [LocDescription("MinorGlyph")]
+    public class MinorGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Monoceros")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Monoceros.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph32Item: Item
+    [LocDescription("MonocerosGlyph")]
+    public class MonocerosGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Gemini")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Gemini.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph33Item: Item
+    [LocDescription("GeminiGlyph")]
+    public class GeminiGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Hydra")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Hydra.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph34Item: Item
+    [LocDescription("HydraGlyph")]
+    public class HydraGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Lynx")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Lynx.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph35Item: Item
+    [LocDescription("LynxGlyph")]
+    public class LynxGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Cancer")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Cancer.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph36Item: Item
+    [LocDescription("CancerGlyph")]
+    public class CancerGlyphItem: Item
     {
     }
 
     [Serialized]
     [LocDisplayName("Sextans")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Sextans.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph37Item: Item
+    [LocDescription("SextansGlyph")]
+    public class SextansGlyphItem: Item
     {
     }
 
     [Serialized]
-    [LocDisplayName("Leo")]
+    [LocDisplayName("LeoGlyph")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Leo.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph38Item: Item
+    [LocDescription("LeoGlyph")]
+    public class LeoGlyphItem: Item
     {
     }
 
     [Serialized]
-    [LocDisplayName("Leo Minor")]
+    [LocDisplayName("LeoMinor")]
     [Weight(25)]
-    [LocDescription("Le glyphe de Leo Minor.")]
-    [Category("Hidden"), Tag("NotInBrowser"), Tag("Glyph")]
-    public class Glyph39Item: Item
+    [LocDescription("LeoMinorGlyph")]
+    public class LeoMinorGlyphItem: Item
     {
     }
 }

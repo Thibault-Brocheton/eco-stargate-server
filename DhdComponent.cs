@@ -1,4 +1,7 @@
-﻿namespace CavRn.Stargate
+﻿using Eco.Shared.Localization;
+using Eco.Shared.Math;
+
+namespace CavRn.Stargate
 {
     using Eco.Core.Controller;
     using Eco.Gameplay.Interactions.Interactors;
@@ -19,12 +22,12 @@
         {
             get
             {
-                var stargate = ServiceHolder<IWorldObjectManager>.Obj.GetObjectsWithin(this.Parent.WorldPosXZ(), 15).FirstOrDefault(worldObject => worldObject.GetType() == typeof(StargateObject));
+                var stargate = ServiceHolder<IWorldObjectManager>.Obj.All.OfType<StargateObject>()
+                    .Where(s => WorldPosition3i.Distance((WorldPosition3i)this.Parent.Position3i, (WorldPosition3i)s.Position3i) < 8)
+                    .OrderBy(s => WorldPosition3i.Distance((WorldPosition3i)this.Parent.Position3i, (WorldPosition3i)s.Position3i))
+                    .FirstOrDefault();
 
-                if (stargate != null) return stargate.GetComponent<StargateComponent>();
-
-                return null;
-
+                return stargate?.GetComponent<StargateComponent>();
             }
         }
 
@@ -33,13 +36,13 @@
         {
             if (this.StargateComponent is null)
             {
-                player.MsgLocStr("Le DHD n'est pas à proximité d'une porte des étoiles !");
+                player.Msg(new LocString("The DHD is not near a Stargate (8 blocks)!"));
                 return;
             }
 
             if (!this.Parent.Enabled)
             {
-                player.MsgLocStr("Le DHD n'est pas alimenté en énergie !");
+                player.Msg(new LocString("The DHD is not enabled!"));
                 return;
             }
 
@@ -53,15 +56,26 @@
             {
                 case StargateComponent.Response.Success:
                     this.Parent.SetAnimatedState($"Glyph{glyphId}", true);
+                    this.Parent.TriggerAnimatedEvent("PressSound");
                     break;
                 case StargateComponent.Response.End:
                 {
                     this.Deactivate();
                     break;
                 }
+                case StargateComponent.Response.AlreadyDone:
+                {
+                    player.Msg(new LocString("Glyph already engaged!"));
+                    break;
+                }
+                case StargateComponent.Response.NotPossible:
+                {
+                    player.Msg(new LocString("You cannot add a new glyph! Press the central button!"));
+                    break;
+                }
                 case StargateComponent.Response.NoAction:
                 {
-                    player.MsgLocStr("Attendez un instant !");
+                    player.Msg(new LocString("Wait a moment!"));
                     break;
                 }
             }
@@ -72,15 +86,17 @@
         {
             if (this.StargateComponent is null)
             {
-                player.MsgLocStr("Le DHD n'est pas à proximité d'une porte des étoiles !");
+                player.Msg(new LocString("The DHD is not near a Stargate (8 blocks)!"));
                 return;
             }
 
             if (!this.Parent.Enabled)
             {
-                player.MsgLocStr("Le DHD n'est pas alimenté en énergie !");
+                player.Msg(new LocString("The DHD is not enabled!"));
                 return;
             }
+
+            this.Parent.TriggerAnimatedEvent("DomeSound");
 
             var response = this.StargateComponent?.Activate(player) ?? StargateComponent.Response.End;
 
@@ -100,7 +116,7 @@
                 }
                 case StargateComponent.Response.NoAction:
                 {
-                    player.MsgLocStr("Attendez un instant !");
+                    player.Msg(new LocString("Wait a moment!"));
                     break;
                 }
             }
