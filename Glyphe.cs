@@ -247,8 +247,8 @@
     [Serialized]
     [LocDisplayName("Canis Minor")]
     [Weight(25)]
-    [LocDescription("MinorGlyph")]
-    public class MinorGlyphItem: Item
+    [LocDescription("CanisMinorGlyph")]
+    public class CanisMinorGlyphItem: Item
     {
     }
 

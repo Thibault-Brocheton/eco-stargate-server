@@ -18,10 +18,11 @@ namespace CavRn.Stargate
     using System.Threading.Tasks;
     using System;
 
-    [Serialized, CreateComponentTabLoc, NoIcon]
+    [Serialized, CreateComponentTabLoc, HasIcon("PowerGridComponent")]
     public class StargateComponent : WorldObjectComponent
     {
         public override WorldObjectComponentClientAvailability Availability => WorldObjectComponentClientAvailability.Always;
+        [SyncToView] public override string IconName => "PowerGridComponent";
 
         private static readonly Dictionary<int, string> NumberGlyphAssoc = new()
         {
