@@ -4,6 +4,7 @@ namespace CavRn.Stargate
 {
     using Eco.Core.Controller;
     using Eco.Core.Utils;
+    using Eco.Gameplay.Components;
     using Eco.Gameplay.Items;
     using Eco.Gameplay.Objects;
     using Eco.Gameplay.Players;
@@ -19,8 +20,12 @@ namespace CavRn.Stargate
     using System;
 
     [Serialized, CreateComponentTabLoc, HasIcon("PowerGridComponent")]
-    public class StargateComponent : WorldObjectComponent
+    public class StargateComponent : WorldObjectComponent, ITriggerVolumeListener
     {
+        const string VortexVolumeName  = "Vortex";                //TriggerVolume name on the gate's client prefab.
+        const string VortexOverlayName = "StargateVortexOverlay"; //Fullscreen overlay prefab in the mod bundle, shown to travellers during the transit.
+        const float  VortexTravelSecs  = 4.0f;                    //Minimum transit duration so the overlay's vortex video plays out entirely before arrival.
+
         public override WorldObjectComponentClientAvailability Availability => WorldObjectComponentClientAvailability.Always;
         [SyncToView] public override string IconName => "PowerGridComponent";
 
@@ -133,39 +138,106 @@ namespace CavRn.Stargate
         {
             base.Tick();
 
-            if (this.IsOpened && !this.IsCalledFromOutside && this.dialedStargate is not null)
+            var config = StargatePlugin.Obj.Config;
+            if      (this.openedAt  is not null && DateTime.Now.Subtract((DateTime)this.openedAt).TotalSeconds  > config.AutoCloseSeconds)                     this.Deactivate(true); //Wormhole lifetime, tracked here rather than by a delayed task so a closed-then-reopened gate never inherits the old timer.
+            else if (!this.IsOpened && this.lastAction is not null && DateTime.Now.Subtract((DateTime)this.lastAction).TotalSeconds > config.DialTimeoutSeconds) this.Deactivate(true); //Abandoned dial.
+        }
+
+        //Fired by the Vortex TriggerVolume on the gate's client prefab when a traveller on foot or their vehicle crosses the event horizon.
+        public void OnPlayerTriggerVolume(Player player, string volumeName, bool entered, bool vehicle)
+        {
+            if (entered && volumeName == VortexVolumeName) this.TravelThroughGate(player.User);
+        }
+
+        //Sends one traveller (on foot or driving) through the opened gate: hidden from other players while their client preloads the arrival area (same flow as the /tpp command),
+        //a vortex overlay covering their own screen, then moved (or their vehicle) to the destination gate.
+        private void TravelThroughGate(User user)
+        {
+            if (!this.IsOpened || this.IsCalledFromOutside || this.dialedStargate is null) return;
+
+            var target    = this.dialedStargate.Parent;
+            var targetRot = Eco.Shared.Math.Quaternion.LookRotation(-target.Rotation.Forward, target.Rotation.Up);
+            Vector3 ArrivalPos(float behind) => new Vector3(target.Position.X, target.Position.Y + 0.25f, target.Position.Z) + target.Rotation.Back * behind;
+
+            if (!user.Player.MountManager.IsMounted)
             {
-                var usersInPosition = UserManager.Users
-                    .Where(user => user.IsOnline
-                                   && Vector3.Distance(user.Position, this.Parent.Position + Vector3i.Up) < 1.25f)
-                    .ToList();
-
-                var usersToTeleport = usersInPosition.Where(user => !user.Player.MountManager.IsMounted);
-                var targetPos = new Vector3(this.dialedStargate.Parent.Position.X, this.dialedStargate.Parent.Position.Y + 0.25f, this.dialedStargate.Parent.Position.Z) + this.dialedStargate.Parent.Rotation.Back;
-                var targetRot = Eco.Shared.Math.Quaternion.LookRotation(-this.dialedStargate.Parent.Rotation.Forward, this.dialedStargate.Parent.Rotation.Up);
-
-                foreach (var user in usersToTeleport)
-                {
-                    user.Player.SetPositionAndRotation(targetPos, targetRot);
-                    user.Player.Msg(new LocString("You travelled through the Stargate!"));
-                }
-
-                var vehiclesToTeleports = usersInPosition
-                    .Where(user => user.Player.MountManager.IsMounted && user.Player.MountManager.Mount.Driver == user.Player)
-                    .Select(user => user.Player.MountManager.Mount.Parent);
-
-                foreach (var vehiclesToTeleport in vehiclesToTeleports)
-                {
-                    vehiclesToTeleport.Position = targetPos;
-                    vehiclesToTeleport.Rotation = targetRot;
-                    vehiclesToTeleport.SyncPositionAndRotation();
-                }
+                var targetPos = ArrivalPos(VehicleArrival.FootDistanceBehindGate);
+                this.TeleportThroughGate(user, targetPos,
+                    teleport: () =>
+                    {
+                        user.Player.SetPositionAndRotation(targetPos, targetRot);
+                        user.Player.Msg(new LocString("You travelled through the Stargate!"));
+                    },
+                    setHidden: hidden => this.SetInvisible(user, hidden),
+                    freezeMovement: true);
             }
-
-            if (!this.IsOpened && this.lastAction is not null && DateTime.Now.Subtract((DateTime)this.lastAction).TotalSeconds > 90)
+            else if (user.Player.MountManager.Mount.Driver == user.Player)
             {
-                this.Deactivate(true);
+                if (!StargatePlugin.Obj.Config.AllowVehicleTravel) { user.Player.Msg(new LocString("Vehicles can't travel through the Stargate here, leave it behind and walk through.")); return; }
+
+                var mount     = user.Player.MountManager.Mount;
+                var targetPos = ArrivalPos(VehicleArrival.DistanceBehindGate(mount.Parent));
+                this.TeleportThroughGate(user, targetPos,
+                    teleport: () =>
+                    {
+                        if (user.Player.MountManager.Mount != mount) return; //Dismounted during the preload: they'll travel on foot instead.
+                        TeleportWithOccupants(mount, targetPos, targetRot);
+                    },
+                    setHidden: hidden =>
+                    {
+                        this.SetInvisible(user, hidden);
+                        mount.Parent.SetClientVisibility(!hidden);
+                    },
+                    freezeMovement: false); //The motor doesn't drive the vehicle, freezing it would do nothing.
             }
+        }
+
+        private void TeleportThroughGate(User user, Vector3 targetPos, Action teleport, Action<bool> setHidden, bool freezeMovement)
+        {
+            if (!this.teleportingUsers.TryAdd(user, 0)) return;
+
+            var wasInvisible = user.IsInvisible;
+            if (!wasInvisible) setHidden(true);
+
+            var arrivalGate = this.dialedStargate?.Parent;
+            _ = Task.Run(async () =>
+            {
+                try     { await user.Player.PreloadedTeleportAsync(targetPos, teleport, VortexOverlayName, freezeMovement, VortexTravelSecs, arrivalGate); }
+                finally
+                {
+                    if (!wasInvisible) setHidden(false);
+                    this.teleportingUsers.TryRemove(user, out _);
+                }
+            });
+        }
+
+        //Private in vanilla; without the reset a server running movement-hack detection would flag (or kick on) the occupants' jump.
+        static readonly System.Reflection.MethodInfo? ResetMovementDetector = typeof(Player).GetMethod("ResetMovementDetector", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+        //Moves the vehicle and the server-side position of everyone aboard. Their clients ride the seat, so a player teleport RPC would dismount them; but left at the origin
+        //server-side, the driver gets the now-distant vehicle dropped from their client and the seat cleared as stale.
+        static void TeleportWithOccupants(MountComponent mount, Vector3 pos, Eco.Shared.Math.Quaternion rot)
+        {
+            var vehicle = mount.Parent;
+            vehicle.Position = pos;
+            vehicle.Rotation = rot;
+            vehicle.SyncPositionAndRotation();
+            (vehicle as PhysicsWorldObject)?.MarkPoseUpdated();
+
+            foreach (var occupant in mount.MountedPlayers)
+            {
+                occupant.User.Position = pos;
+                occupant.User.MarkDirty();
+                occupant.Position = pos;
+                ResetMovementDetector?.Invoke(occupant, new object[] { pos });
+                occupant.MinimapObject.UpdatePosition(pos);
+            }
+        }
+
+        private void SetInvisible(User user, bool invisible)
+        {
+            user.IsInvisible = invisible;
+            user.OnInvisible?.Invoke(user);
         }
 
         private static List<(int, int)> BuildAllOrderedPairs(List<int> glyphs)
@@ -204,10 +276,16 @@ namespace CavRn.Stargate
 
         private readonly List<string> dialAddress = new List<string>();
 
-        private bool isRotating = false;
+        //Travellers whose destination is preloading; Tick keeps detecting them in the vortex until the teleport lands.
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<User, byte> teleportingUsers = new();
+
+        private DateTime rotatingUntil = DateTime.MinValue; //Ring spin end time; presses during a spin stack instead of being refused.
+        private int dialSession = 0;                        //Bumped on Deactivate so pending chevron timers from a cancelled dial stay silent.
+        private bool IsRotating => DateTime.Now < this.rotatingUntil;
         private bool IsOpened { get; set; }
         private bool IsCalledFromOutside { get; set; } = false;
         private DateTime? lastAction = null;
+        private DateTime? openedAt   = null; //Set on the dialing gate only; the receiving gate follows it.
         private StargateComponent? dialedStargate;
 
         private void Deactivate(bool notifyDhd = false, bool notifyDialStargate = true)
@@ -218,11 +296,14 @@ namespace CavRn.Stargate
             }
 
             this.lastAction = null;
-            this.isRotating = false;
+            this.openedAt   = null;
+            this.rotatingUntil = DateTime.MinValue;
+            this.dialSession++;
             this.IsOpened = false;
             this.IsCalledFromOutside = false;
 
             this.Parent.SetAnimatedState("Vortex", this.IsOpened);
+            this.Parent.SetAnimatedState("Blocked", false);
 
             this.Parent.SetAnimatedState("Chevron1", false);
             this.Parent.SetAnimatedState("Chevron2", false);
@@ -251,7 +332,7 @@ namespace CavRn.Stargate
         {
             this.lastAction = DateTime.Now;
 
-            if (!this.Parent.Enabled || this.isRotating || this.IsOpened)
+            if (!this.Parent.Enabled || this.IsOpened)
             {
                 return Response.NoAction;
             }
@@ -267,16 +348,24 @@ namespace CavRn.Stargate
             }
 
             this.dialAddress.Add(glyph);
+            var chevronIndex = this.dialAddress.Count; //Captured now: stacked presses each light their own chevron.
+            var session      = this.dialSession;
 
-            this.isRotating = true;
-            this.Parent.TriggerAnimatedEvent(this.dialAddress.Count == 7 ? "Rotate7" : "Rotate");
+            //Presses stack freely: only start a new spin when none is running (re-triggering would pile up ghost rotations in the animator).
+            if (!this.IsRotating)
+            {
+                this.rotatingUntil = DateTime.Now.AddMilliseconds(8300);
+                this.Parent.TriggerAnimatedEvent(chevronIndex == 7 ? "Rotate7" : "Rotate");
+            }
 
+            //The current spin's end catches up every press made during it: all their chevrons light together when it locks.
+            var delay = (int)Math.Max(0, (this.rotatingUntil - DateTime.Now).TotalMilliseconds);
             _ = Task.Run(async () =>
             {
-                await Task.Delay(8300);
+                await Task.Delay(delay);
 
-                this.isRotating = false;
-                this.Parent.SetAnimatedState($"Chevron{this.dialAddress.Count}", true);
+                if (this.dialSession != session) return; //Dial was cancelled meanwhile: leave the chevron dark.
+                this.Parent.SetAnimatedState($"Chevron{chevronIndex}", true);
             });
 
             return Response.Success;
@@ -293,8 +382,9 @@ namespace CavRn.Stargate
             this.lastAction = null;
             this.IsCalledFromOutside = true;
             this.IsOpened = true;
-            this.isRotating = false;
-            this.Parent.SetAnimatedState("Rotate", this.isRotating);
+            this.rotatingUntil = DateTime.MinValue;
+            this.Parent.SetAnimatedState("Rotate", false);
+            this.Parent.SetAnimatedState("Blocked", true); //Arrival side: a solid wall blocks entering the vortex the wrong way.
             this.Parent.TriggerAnimatedEvent("OpenVortex");
 
             _ = Task.Run(async () =>
@@ -321,7 +411,7 @@ namespace CavRn.Stargate
         {
             this.lastAction = DateTime.Now;
 
-            if (!this.Parent.Enabled || this.isRotating)
+            if (!this.Parent.Enabled)
             {
                 return Response.NoAction;
             }
@@ -366,6 +456,7 @@ namespace CavRn.Stargate
 
             this.dialedStargate = foundStargate;
             this.IsOpened = true;
+            this.openedAt = DateTime.Now;
             this.Parent.TriggerAnimatedEvent("OpenVortex");
 
             _ = Task.Run(async () =>
@@ -375,34 +466,7 @@ namespace CavRn.Stargate
                 this.Parent.SetAnimatedState("Vortex" , this.IsOpened);
             });
 
-
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(3800 * 60);
-
-                this.Deactivate(true);
-            });
-
             return Response.Success;
         }
-
-        /*[Interaction(InteractionTrigger.InteractKey, "EnterVortex", authRequired: AccessType.None, requiredEnvVars: new[] { "EnterVortex" })]
-        public async Task EnterVortex(Player player, InteractionTriggerInfo trigger, InteractionTarget target)
-        {
-            if (this.dialedStargate is null || !this.IsOpened) return;
-
-            if (this.IsCalledFromOutside)
-            {
-                player.MsgLocStr("Vortex is not opened in this way!");
-                return;
-            }
-
-            if (await player.ConfirmBoxLoc($"Do you want to travel through the stargate?"))
-            {
-                var pos = new Vector3i(this.dialedStargate.Parent.Position3i.X, this.dialedStargate.Parent.Position3i.Y, this.dialedStargate.Parent.Position3i.Z) + (2 * this.dialedStargate.Parent.Rotation.Back);
-                player.SetPosition(pos);
-                player.MsgLocStr("You travelled through the Stargate!");
-            }
-        }*/
     }
 }

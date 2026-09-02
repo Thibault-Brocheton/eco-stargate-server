@@ -4,6 +4,7 @@
     using Eco.Core.Plugins;
     using Eco.Core.Utils;
     using Eco.Gameplay;
+    using Eco.Shared.Localization;
     using Eco.Shared.Logging;
     using Eco.Shared.Math;
     using Eco.Shared.Utils;
@@ -27,7 +28,17 @@
 
     public class StargateConfig: Singleton<StargateConfig>
     {
+        [LocDescription("How many Stargates are scattered across the map when the world is generated.")]
         public int NumberToSpawnAtWorldCreation { get; set; } = 3;
+
+        [LocDescription("Whether a player driving a vehicle can take it through a Stargate. When off, only travellers on foot go through.")]
+        public bool AllowVehicleTravel { get; set; } = true;
+
+        [LocDescription("Seconds an opened Stargate keeps its wormhole before shutting down by itself.")]
+        public float AutoCloseSeconds { get; set; } = 228f; //3 min 48: a nod to the show's 38 minutes, without the wait.
+
+        [LocDescription("Seconds without a new glyph after which an unfinished dial resets the Stargate.")]
+        public float DialTimeoutSeconds { get; set; } = 90f;
     }
 
     public class StargatePlugin: Singleton<StargatePlugin>, IModKitPlugin, IConfigurablePlugin
